@@ -1,0 +1,4 @@
+python -m venv .venv && .venv/Scripts/activate
+pip install fastapi uvicorn pydantic==1.* python-multipart
+
+uvicorn safety:app --reload --port 8005

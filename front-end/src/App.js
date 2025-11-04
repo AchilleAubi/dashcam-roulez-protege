@@ -1,16 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
+import Safety from "./Safety";
 
 const API_BASE = "http://localhost:8000"; // <-- adapte si besoin
+const API_SAFETY = "http://localhost:8005";
 
 function App() {
   const [journal, setJournal] = useState([]);
   const [filtre, setFiltre] = useState("");
-  // Empêche l'upload double (StrictMode) :
-  const uploadingRef = useRef(false);          
-  const recordSessionRef = useRef(null);       
-  const processedSessionRef = useRef(null);    
 
+  // Empêche l'upload double (StrictMode)
+  const uploadingRef = useRef(false);
+  const recordSessionRef = useRef(null);
+  const processedSessionRef = useRef(null);
 
   useEffect(() => {
     fetch("/journal_emotionnel.json")
@@ -19,7 +21,7 @@ function App() {
       .catch((err) => console.error("Erreur chargement JSON", err));
   }, []);
 
-  // ==================== DASHCAM Enregistrement video====================
+  // ==================== DASHCAM Enregistrement video ====================
   const liveVideoRef = useRef(null);
   const [mediaStream, setMediaStream] = useState(null);
   const [recorder, setRecorder] = useState(null);
@@ -109,7 +111,6 @@ function App() {
     }
   };
 
-
   const stopRecording = () => {
     if (recorder && recorder.state !== "inactive") {
       recorder.stop();
@@ -117,7 +118,7 @@ function App() {
     }
   };
 
-  // ---- (NOUVEAU) Après arrêt: créer le Blob local, puis uploader AUTO ----
+  // ---- Après arrêt: créer le Blob local, puis uploader AUTO ----
   useEffect(() => {
     const autoUpload = async () => {
       if (recorder || chunks.length === 0) return;
@@ -125,9 +126,7 @@ function App() {
       const sessionId = recordSessionRef.current;
       if (!sessionId) return;
 
-      if (processedSessionRef.current === sessionId) {
-        return;
-      }
+      if (processedSessionRef.current === sessionId) return;
 
       if (uploadingRef.current) return;
       uploadingRef.current = true;
@@ -179,12 +178,11 @@ function App() {
     autoUpload();
   }, [recorder, chunks]);
 
-
   // ---- Téléchargement / Suppression (sur serveur) ----
   const downloadServerClip = (clip) => {
     const a = document.createElement("a");
     a.href = clip.url;
-    a.download = clip.id; 
+    a.download = clip.id;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -348,6 +346,9 @@ function App() {
           ))}
         </div>
       </section>
+
+      <hr />
+      <Safety apiBase={API_SAFETY} />
     </div>
   );
 }

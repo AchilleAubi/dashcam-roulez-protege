@@ -1,0 +1,43 @@
+[
+  {
+    "id": "7e5ac9cd94",
+    "timestamp": "2025-11-04T18:38:16Z",
+    "type": "sos",
+    "severity": 70,
+    "location": {},
+    "note": "Test SOS",
+    "status": "sent",
+    "media": [
+      "http://localhost:8000/files/clip_001.mp4"
+    ],
+    "contacts_notified": [
+      "a6a7914fc7"
+    ]
+  },
+  {
+    "id": "43d124eb52",
+    "timestamp": "2025-11-04T18:39:15Z",
+    "type": "crash",
+    "severity": 100,
+    "location": {},
+    "note": null,
+    "status": "sent",
+    "media": [],
+    "contacts_notified": [
+      "a6a7914fc7"
+    ]
+  },
+  {
+    "id": "123e0d7929",
+    "timestamp": "2025-11-04T19:06:16Z",
+    "type": "sos",
+    "severity": 70,
+    "location": {},
+    "note": "SOS manuel depuis UI",
+    "status": "sent",
+    "media": [],
+    "contacts_notified": [
+      "a6a7914fc7"
+    ]
+  }
+]

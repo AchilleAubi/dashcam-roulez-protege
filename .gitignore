@@ -1,1 +1,5 @@
 front-end/node_modules/
+/back-end/Driver-3/.venv
+/back-end/Safety-5/.venv
+/back-end/Driver-3/__pycache__
+/back-end/Safety-5/__pycache__
