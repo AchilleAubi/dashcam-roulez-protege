@@ -1,0 +1,23 @@
+Installation (terminal): 
+
+conda create -n moodcam-env python=3.8 -y
+conda activate moodcam-env
+
+(moodcam-env) user@...
+
+python -m pip install --upgrade pip
+
+pip install numpy==1.23
+pip install pandas==1.3.5
+pip install tensorflow==2.10.0
+pip install deepface==0.0.79
+pip install pyttsx3
+
+python -m pip install fpdf2
+
+Pour tester : python -c "from deepface import DeepFace; print('DeepFace OK ✅')"
+Pour tester : python -c "from fpdf import FPDF; print('fpdf OK ✅')"
+
+cd ~/Documents/00\ M2\ -\ MBDS\ -\ Major/moodcam
+
+python moodcam.py

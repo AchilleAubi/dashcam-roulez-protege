@@ -1,0 +1,54 @@
+.App {
+  font-family: sans-serif;
+  padding: 2rem;
+  max-width: 1000px;
+  margin: auto;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+th, td {
+  padding: 0.75rem;
+  border: 1px solid #ccc;
+  text-align: center;
+}
+
+thead {
+  background-color: #343a40;
+  color: white;
+}
+
+/* Container scroll horizontal sur petits écrans */
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Rendre le tableau fluide */
+table {
+  min-width: 700px;
+  width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  h1 {
+    font-size: 1.4rem;
+  }
+
+  table {
+    font-size: 0.85rem;
+  }
+
+  th, td {
+    padding: 0.5rem;
+  }
+}

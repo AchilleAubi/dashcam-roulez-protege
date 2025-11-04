@@ -1,0 +1,12 @@
+timestamp,emotion,acceleration,freinage,message
+2025-07-25 14:23:00,happy,normale,léger,"Émotion détectée : happy. Accélération : normale, Freinage : léger."
+2025-07-25 14:24:17,neutral,faible,brutal,"Émotion détectée : neutral. Accélération : faible, Freinage : brutal."
+2025-07-25 14:24:42,neutral,normale,brutal,"Émotion détectée : neutral. Accélération : normale, Freinage : brutal."
+2025-07-25 14:25:37,sad,forte,léger,"Émotion détectée : sad. Accélération : forte, Freinage : léger."
+2025-07-25 14:45:32,neutral,faible,normal,"Émotion détectée : neutral. Accélération : faible, Freinage : normal."
+2025-07-25 14:46:13,happy,faible,brutal,"Émotion détectée : happy. Accélération : faible, Freinage : brutal."
+2025-11-04 11:50:41,sad,normale,brutal,"Émotion détectée : sad. Accélération : normale, Freinage : brutal."
+2025-11-04 11:50:53,sad,faible,léger,"Émotion détectée : sad. Accélération : faible, Freinage : léger."
+2025-11-04 11:52:59,neutral,normale,léger,"Émotion détectée : neutral. Accélération : normale, Freinage : léger."
+2025-11-04 11:58:36,neutral,faible,léger,"Émotion détectée : neutral. Accélération : faible, Freinage : léger."
+2025-11-04 11:59:03,neutral,forte,normal,"Émotion détectée : neutral. Accélération : forte, Freinage : normal."
