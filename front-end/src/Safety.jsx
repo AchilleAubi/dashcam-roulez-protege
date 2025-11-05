@@ -66,14 +66,14 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-800">🛡️ Sécurité & Urgence</h2>
+      <h2 className="text-2xl font-bold text-gray-800">Sécurité & Urgence</h2>
 
       {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">{error}</div>}
 
       <div className="bg-white rounded-xl p-6 shadow-md">
         <h3 className="text-lg font-semibold mb-4">Bouton SOS</h3>
         <button onClick={triggerSOS} className="w-full px-6 py-4 bg-red-600 text-white rounded-lg hover:bg-red-700 font-bold text-lg shadow-lg transition-all">
-          🚨 Déclencher SOS
+          Déclencher SOS
         </button>
       </div>
 
@@ -130,7 +130,7 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
           </div>
         </div>
         <button onClick={simulateCrash} className="w-full px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-bold transition-colors">
-          💥 Simuler
+          Simuler
         </button>
       </div>
 

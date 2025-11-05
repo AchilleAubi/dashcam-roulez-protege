@@ -246,7 +246,7 @@ function App() {
               onClick={exportCSV} 
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
             >
-              📁 Exporter en CSV
+              Exporter en CSV
             </button>
           </div>
         </div>
@@ -279,13 +279,13 @@ function App() {
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-md">
-          <h2 className="text-2xl font-bold mb-6 text-gray-800">🎥 Flux Vidéo</h2>
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">Flux Vidéo</h2>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="bg-gray-800 rounded-xl overflow-hidden">
                 <div className="bg-gray-700 px-4 py-2 font-semibold text-white">
-                  📹 Webcam Locale
+                  Webcam Locale
                 </div>
                 <video
                   ref={liveVideoRef}
@@ -298,16 +298,16 @@ function App() {
 
               <div className="flex gap-2 flex-wrap">
                 <button onClick={startCamera} disabled={!!mediaStream} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
-                  ▶️ Démarrer caméra
+                  Démarrer caméra
                 </button>
                 <button onClick={stopCamera} disabled={!mediaStream} className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
-                  ⏹️ Arrêter caméra
+                  Arrêter caméra
                 </button>
                 <button onClick={startRecording} disabled={!mediaStream || isRecording} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
-                  ⭕ Enregistrer
+                  Enregistrer
                 </button>
                 <button onClick={stopRecording} disabled={!isRecording} className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
-                  ⏺️ Stopper
+                  Stopper
                 </button>
               </div>
 
@@ -319,7 +319,7 @@ function App() {
 
             <div className="bg-gray-800 rounded-xl overflow-hidden">
               <div className="bg-gray-700 px-4 py-2 font-semibold text-white">
-                🚗 Dashcam Distante (Raspberry Pi)
+                Dashcam Distante (Raspberry Pi)
               </div>
               <img
                 src={`${API_DASHCAM}/video`}
@@ -336,7 +336,7 @@ function App() {
 
         {clipsLocal.length > 0 && (
           <div className="bg-white rounded-xl p-6 shadow-md">
-            <h3 className="text-2xl font-bold mb-6 text-gray-800">⏳ En cours (non persistés)</h3>
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">En cours (non persistés)</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clipsLocal.map((c) => (
                 <div key={c.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-md">
@@ -360,7 +360,7 @@ function App() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-2xl font-bold text-gray-800">🎞️ Clips enregistrés</h3>
               <button onClick={loadServerClips} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors">
-                🔄 Rafraîchir
+                Rafraîchir
               </button>
             </div>
             
@@ -376,10 +376,10 @@ function App() {
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => downloadServerClip(c)} className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition-colors">
-                        ⬇️ Télécharger
+                        Télécharger
                       </button>
                       <button onClick={() => deleteServerClip(c.id)} className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold transition-colors">
-                        🗑️ Supprimer
+                        Supprimer
                       </button>
                     </div>
                   </div>

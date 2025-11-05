@@ -23,7 +23,7 @@ export default function DashcamUI({ apiBase = "http://127.0.0.1:8003" }) {
         setAlerts(data);
         setIsConnected(true);
       } catch (err) {
-        console.error("❌ Erreur récupération alertes:", err);
+        console.error("Erreur récupération alertes:", err);
         setIsConnected(false);
       }
     };
@@ -63,7 +63,7 @@ export default function DashcamUI({ apiBase = "http://127.0.0.1:8003" }) {
       const data = await res.json();
       alert("✅ " + data.message);
     } catch (err) {
-      alert("❌ Erreur lors de l'arrêt: " + err.message);
+      alert("Erreur lors de l'arrêt: " + err.message);
     }
   };
 
@@ -71,7 +71,7 @@ export default function DashcamUI({ apiBase = "http://127.0.0.1:8003" }) {
 
   return (
     <div className="bg-gray-900 rounded-xl p-6 text-white">
-      <h2 className="text-2xl font-bold mb-6">🚗 Dashcam Intelligente - Système de Sécurité</h2>
+      <h2 className="text-2xl font-bold mb-6">Dashcam Intelligente - Système de Sécurité</h2>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="flex flex-col items-center justify-center p-6 bg-gray-800 rounded-xl">
@@ -94,12 +94,12 @@ export default function DashcamUI({ apiBase = "http://127.0.0.1:8003" }) {
           </div>
 
           <div className="w-full bg-gray-700 rounded-xl p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-300 mb-3">📊 Statistiques</h3>
+            <h3 className="text-sm font-semibold text-gray-300 mb-3">Statistiques</h3>
             
             <div className="flex justify-between">
               <span className="text-gray-400">Status:</span>
               <span className={`font-bold ${stats.recording ? 'text-green-400' : 'text-red-400'}`}>
-                {stats.recording ? '🔴 REC' : '⏸️ Pause'}
+                {stats.recording ? 'REC' : '⏸️ Pause'}
               </span>
             </div>
             
@@ -127,7 +127,7 @@ export default function DashcamUI({ apiBase = "http://127.0.0.1:8003" }) {
             onClick={handleStop}
             className="mt-6 w-full bg-red-600 hover:bg-red-700 py-3 rounded-xl font-bold shadow-lg transition-all"
           >
-            ⏹️ Arrêter et sauvegarder
+            Arrêter et sauvegarder
           </button>
         </div>
 
@@ -164,7 +164,7 @@ export default function DashcamUI({ apiBase = "http://127.0.0.1:8003" }) {
 
         <div className="flex flex-col bg-gray-800 rounded-xl p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-bold">⚠️ Alertes</h3>
+            <h3 className="text-xl font-bold">Alertes</h3>
             <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
               {alerts.length}
             </div>
