@@ -1,15 +1,16 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Safety from "./Safety";
+import DashcamUI from "./DashcamUI";
 
-const API_BASE = "http://localhost:8000"; // <-- adapte si besoin
+const API_BASE = "http://localhost:8000";
 const API_SAFETY = "http://localhost:8005";
+const API_DASHCAM = "http://127.0.0.1:8003";
 
 function App() {
   const [journal, setJournal] = useState([]);
   const [filtre, setFiltre] = useState("");
 
-  // Empêche l'upload double (StrictMode)
   const uploadingRef = useRef(false);
   const recordSessionRef = useRef(null);
   const processedSessionRef = useRef(null);
@@ -21,7 +22,6 @@ function App() {
       .catch((err) => console.error("Erreur chargement JSON", err));
   }, []);
 
-  // ==================== DASHCAM Enregistrement video ====================
   const liveVideoRef = useRef(null);
   const [mediaStream, setMediaStream] = useState(null);
   const [recorder, setRecorder] = useState(null);
@@ -80,7 +80,6 @@ function App() {
     }
   };
 
-  // ---- Enregistrement ----
   const startRecording = () => {
     if (!mediaStream) {
       alert("Démarre d'abord la caméra.");
@@ -107,7 +106,7 @@ function App() {
       setRecorder(mr);
     } catch (e) {
       console.error("Échec MediaRecorder:", e);
-      alert("L’enregistrement n’est pas supporté par ce navigateur.");
+      alert("L'enregistrement n'est pas supporté par ce navigateur.");
     }
   };
 
@@ -118,7 +117,6 @@ function App() {
     }
   };
 
-  // ---- Après arrêt: créer le Blob local, puis uploader AUTO ----
   useEffect(() => {
     const autoUpload = async () => {
       if (recorder || chunks.length === 0) return;
@@ -178,7 +176,6 @@ function App() {
     autoUpload();
   }, [recorder, chunks]);
 
-  // ---- Téléchargement / Suppression (sur serveur) ----
   const downloadServerClip = (clip) => {
     const a = document.createElement("a");
     a.href = clip.url;
@@ -198,9 +195,7 @@ function App() {
       alert("Échec suppression");
     }
   };
-  // ==================== Fin enregistrement video ====================
 
-  // ==================== UI ====================
   const getEmotionColor = (emotion) => {
     switch (emotion) {
       case "happy": return "#d4edda";
@@ -234,121 +229,170 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <h1>Journal Émotionnel - MoodCam 📊</h1>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Journal Émotionnel - MoodCam 📊</h1>
 
-      {/* Recherche + export */}
-      <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-        <input
-          type="text"
-          placeholder="🔎 Rechercher (mot, émotion, date...)"
-          value={filtre}
-          onChange={(e) => setFiltre(e.target.value.toLowerCase())}
-          style={{
-            padding: "10px",
-            borderRadius: "5px",
-            border: "1px solid #ccc",
-            width: "100%",
-            maxWidth: "400px",
-          }}
-        />
-        <button onClick={exportCSV} className="btn">📁 Exporter en CSV</button>
-      </div>
-
-      {/* TABLEAU JOURNAL (existant) */}
-      <div className="table-container" style={{ marginTop: 32 }}>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Émotion</th>
-              <th>Accélération</th>
-              <th>Freinage</th>
-              <th>Message</th>
-            </tr>
-          </thead>
-          <tbody>
-            {journalFiltré.map((entry, index) => (
-              <tr key={index} style={{ backgroundColor: getEmotionColor(entry.emotion) }}>
-                <td>{entry.timestamp}</td>
-                <td>{entry.emotion}</td>
-                <td>{entry.acceleration}</td>
-                <td>{entry.freinage}</td>
-                <td>{entry.message}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* DASHCAM enregistrement video */}
-      <section style={{ marginTop: 24 }}>
-        <h2>🎥 DashCam — Enregistrement Webcam (persistant)</h2>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 12, maxWidth: 720 }}>
-          <video
-            ref={liveVideoRef}
-            muted
-            playsInline
-            style={{ width: "100%", background: "#000", borderRadius: 8, border: "1px solid #ddd" }}
-          />
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="bg-white rounded-xl p-6 shadow-md">
+          <div className="flex gap-4 flex-wrap items-center">
+            <input
+              type="text"
+              placeholder="🔎 Rechercher (mot, émotion, date...)"
+              value={filtre}
+              onChange={(e) => setFiltre(e.target.value.toLowerCase())}
+              className="flex-1 min-w-64 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button 
+              onClick={exportCSV} 
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
+            >
+              📁 Exporter en CSV
+            </button>
+          </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
-          <button onClick={startCamera} disabled={!!mediaStream} className="btn">▶️ Démarrer la caméra</button>
-          <button onClick={stopCamera} disabled={!mediaStream} className="btn secondary">⏹️ Arrêter la caméra</button>
-          <button onClick={startRecording} disabled={!mediaStream || isRecording} className="btn green">⭕ Démarrer l’enregistrement</button>
-          <button onClick={stopRecording} disabled={!isRecording} className="btn danger">⏺️ Stopper & uploader</button>
-          <button onClick={loadServerClips} className="btn secondary">🔄 Rafraîchir la liste</button>
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-200 text-black">
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Date</th>
+                  <th className="px-6 py-3 text-left font-semibold">Émotion</th>
+                  <th className="px-6 py-3 text-left font-semibold">Accélération</th>
+                  <th className="px-6 py-3 text-left font-semibold">Freinage</th>
+                  <th className="px-6 py-3 text-left font-semibold">Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {journalFiltré.map((entry, index) => (
+                  <tr key={index} style={{ backgroundColor: getEmotionColor(entry.emotion) }} className="border-b border-gray-200">
+                    <td className="px-6 py-4">{entry.timestamp}</td>
+                    <td className="px-6 py-4">{entry.emotion}</td>
+                    <td className="px-6 py-4">{entry.acceleration}</td>
+                    <td className="px-6 py-4">{entry.freinage}</td>
+                    <td className="px-6 py-4">{entry.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div style={{ marginTop: 8, fontSize: 14 }}>
-          Caméra: {mediaStream ? "ON" : "OFF"} • Enregistrement: {isRecording ? "EN COURS..." : "—"}
+        <div className="bg-white rounded-xl p-6 shadow-md">
+          <h2 className="text-2xl font-bold mb-6 text-gray-800">🎥 Flux Vidéo</h2>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="bg-gray-800 rounded-xl overflow-hidden">
+                <div className="bg-gray-700 px-4 py-2 font-semibold text-white">
+                  📹 Webcam Locale
+                </div>
+                <video
+                  ref={liveVideoRef}
+                  muted
+                  playsInline
+                  className="w-full bg-black"
+                  style={{ aspectRatio: '16/9' }}
+                />
+              </div>
+
+              <div className="flex gap-2 flex-wrap">
+                <button onClick={startCamera} disabled={!!mediaStream} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
+                  ▶️ Démarrer caméra
+                </button>
+                <button onClick={stopCamera} disabled={!mediaStream} className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
+                  ⏹️ Arrêter caméra
+                </button>
+                <button onClick={startRecording} disabled={!mediaStream || isRecording} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
+                  ⭕ Enregistrer
+                </button>
+                <button onClick={stopRecording} disabled={!isRecording} className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold transition-colors">
+                  ⏺️ Stopper
+                </button>
+              </div>
+
+              <div className="text-sm text-gray-600">
+                Caméra: <span className="font-semibold">{mediaStream ? "ON" : "OFF"}</span> • 
+                Enregistrement: <span className="font-semibold">{isRecording ? "EN COURS..." : "—"}</span>
+              </div>
+            </div>
+
+            <div className="bg-gray-800 rounded-xl overflow-hidden">
+              <div className="bg-gray-700 px-4 py-2 font-semibold text-white">
+                🚗 Dashcam Distante (Raspberry Pi)
+              </div>
+              <img
+                src={`${API_DASHCAM}/video`}
+                alt="Flux dashcam"
+                className="w-full bg-black"
+                style={{ aspectRatio: '16/9' }}
+                onError={(e) => {
+                  e.target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='360'%3E%3Crect fill='%23111' width='640' height='360'/%3E%3Ctext x='50%25' y='50%25' font-size='18' fill='%23666' text-anchor='middle' dominant-baseline='middle'%3EFlux vidéo non disponible%3C/text%3E%3C/svg%3E";
+                }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* (Optionnel) Clips temporaires (non persistés) */}
         {clipsLocal.length > 0 && (
-          <>
-            <h3 style={{ marginTop: 20 }}>⏳ En cours (non persistés)</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
+          <div className="bg-white rounded-xl p-6 shadow-md">
+            <h3 className="text-2xl font-bold mb-6 text-gray-800">⏳ En cours (non persistés)</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clipsLocal.map((c) => (
-                <div key={c.id} className="card">
-                  <video src={c.url} controls style={{ width: "100%", borderRadius: 8, background: "#000" }} />
-                  <div className="card-meta">
-                    <div>ID: {c.id}</div>
-                    <div>Taille: {(c.size / (1024 * 1024)).toFixed(2)} Mo</div>
-                    <div>Créé: {new Date(c.createdAt).toLocaleString()}</div>
-                    <div>Statut: pas encore sur le serveur</div>
+                <div key={c.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-md">
+                  <video src={c.url} controls className="w-full bg-black" />
+                  <div className="p-4 space-y-2">
+                    <div className="text-sm text-gray-600">
+                      <div className="font-semibold">ID: {c.id}</div>
+                      <div>Taille: {(c.size / (1024 * 1024)).toFixed(2)} Mo</div>
+                      <div>Créé: {new Date(c.createdAt).toLocaleString()}</div>
+                      <div className="text-orange-600 font-semibold">Statut: En upload...</div>
+                    </div>
                   </div>
                 </div>
               ))}
             </div>
-          </>
+          </div>
         )}
 
-        {/* 🎞️ Clips enregistrés (persistants, backend) */}
-        <h3 style={{ marginTop: 20 }}>🎞️ Clips enregistrés (persistants)</h3>
-        {clipsServer.length === 0 && <div>Aucun clip persistant pour le moment.</div>}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 16 }}>
-          {clipsServer.map((c) => (
-            <div key={c.id} className="card">
-              <video src={c.url} controls style={{ width: "100%", borderRadius: 8, background: "#000" }} />
-              <div className="card-meta">
-                <div>Nom: {c.id}</div>
-                <div>Taille: {c.size ? (c.size / (1024 * 1024)).toFixed(2) + " Mo" : "—"}</div>
-                <div>Créé: {new Date(c.createdAt).toLocaleString()}</div>
-              </div>
-              <div className="card-actions">
-                <button onClick={() => downloadServerClip(c)} className="btn small">⬇️ Télécharger</button>
-                <button onClick={() => deleteServerClip(c.id)} className="btn small danger">🗑️ Supprimer</button>
-              </div>
+        {clipsServer.length > 0 && (
+          <div className="bg-white rounded-xl p-6 shadow-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800">🎞️ Clips enregistrés</h3>
+              <button onClick={loadServerClips} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors">
+                🔄 Rafraîchir
+              </button>
             </div>
-          ))}
-        </div>
-      </section>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {clipsServer.map((c) => (
+                <div key={c.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-md">
+                  <video src={c.url} controls className="w-full bg-black" />
+                  <div className="p-4 space-y-2">
+                    <div className="text-sm text-gray-600">
+                      <div className="font-semibold">Nom: {c.id}</div>
+                      <div>Taille: {c.size ? (c.size / (1024 * 1024)).toFixed(2) + " Mo" : "—"}</div>
+                      <div>Créé: {new Date(c.createdAt).toLocaleString()}</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => downloadServerClip(c)} className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-semibold transition-colors">
+                        ⬇️ Télécharger
+                      </button>
+                      <button onClick={() => deleteServerClip(c.id)} className="flex-1 px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold transition-colors">
+                        🗑️ Supprimer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-      <hr />
-      <Safety apiBase={API_SAFETY} />
+        <DashcamUI apiBase={API_DASHCAM} />
+
+        <Safety apiBase={API_SAFETY} />
+      </div>
     </div>
   );
 }
