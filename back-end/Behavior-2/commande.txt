@@ -1,0 +1,87 @@
+pip install -r pip-requirements.txt
+
+
+# ========================================
+# SCRIPT DE DÉTECTION (detection_behavior.py)
+# ========================================
+
+# Mode Simple (baseline)
+python detection_behavior.py
+
+# Avec différents trackers
+python detection_behavior.py --tracker deepsort
+python detection_behavior.py --tracker bytetrack
+
+# Avec webcam
+python detection_behavior.py --webcam
+python detection_behavior.py --webcam --tracker deepsort
+
+# Mode CPU uniquement
+python detection_behavior.py --cpu-only
+python detection_behavior.py --tracker deepsort --cpu-only
+
+# Avec une vidéo personnalisée
+python detection_behavior.py --video ma_video.mp4
+python detection_behavior.py --video ma_video.mp4 --tracker bytetrack
+
+# Skip frames (pour accélérer)
+python detection_behavior.py --skip 2
+
+# Sans affichage vidéo
+python detection_behavior.py --no-display
+
+# Lancer les tests
+python detection_behavior.py --run-tests
+
+# ========================================
+# SERVEUR FLASK (server.py)
+# ========================================
+
+# Mode webcam (par défaut)
+python server.py
+
+# Avec tracker spécifique
+python server.py --tracker deepsort
+python server.py --tracker bytetrack
+
+# Mode vidéo (fichier)
+python server.py --video test.mp4
+python server.py --video test.mp4 --tracker bytetrack
+
+# Port personnalisé
+python server.py --port 8080
+
+# Webcam spécifique
+python server.py --webcam-id 1
+
+# Configuration complète
+python server.py --tracker deepsort --webcam-id 0 --port 8003 --host 0.0.0.0
+
+# ========================================
+# ENDPOINTS DU SERVEUR
+# ========================================
+
+# Interface web
+http://localhost:8003/
+
+# Flux vidéo
+http://localhost:8003/video
+
+# Alertes JSON
+http://localhost:8003/alerts
+
+# Statistiques
+http://localhost:8003/stats
+
+# Arrêter le système (POST)
+curl -X POST http://localhost:8003/stop
+
+# ========================================
+# COMMANDES RECOMMANDÉES POUR DÉMARRER
+# ========================================
+
+# Tester rapidement avec webcam
+python server.py
+
+# Détection simple
+python detection_behavior.py --webcam
