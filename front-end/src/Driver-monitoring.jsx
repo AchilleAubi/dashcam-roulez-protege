@@ -5,7 +5,7 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
   const [filtre, setFiltre] = useState("");
 
   useEffect(() => {
-    fetch("/journal_emotionnel.json")
+    fetch("/journal_driver.json")
       .then((res) => res.json())
       .then((data) => setJournal(data))
       .catch((err) => console.error("Erreur chargement JSON", err));
@@ -36,7 +36,7 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
 
   return (
     <div className="bg-white rounded-xl p-6 shadow-md">
-      <h3 className="text-lg font-semibold mb-4">Historique somnolence</h3>
+      <h3 className="text-lg font-semibold mb-4">Historique du conducteur</h3>
       <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -44,7 +44,7 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
               <tr>
                 <th className="px-6 py-3 text-left font-semibold">Date</th>
                 <th className="px-6 py-3 text-left font-semibold">
-                  somnolence
+                  Nom
                 </th>
                 <th className="px-6 py-3 text-left font-semibold">Image</th>
                 <th className="px-6 py-3 text-left font-semibold">Message</th>
@@ -58,7 +58,7 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
                   className="border-b border-gray-200"
                 >
                   <td className="px-6 py-4">{entry.timestamp}</td>
-                  <td className="px-6 py-4">{entry.emotion}</td>
+                  <td className="px-6 py-4">{entry.name}</td>
                   <td className="px-6 py-4">
                     {entry.image_base64 ? (
                       <img
@@ -70,8 +70,6 @@ export default function Safety({ apiBase = "http://localhost:8005" }) {
                       <span className="text-gray-500 italic">Aucune image</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">{entry.acceleration}</td>
-                  <td className="px-6 py-4">{entry.freinage}</td>
                   <td className="px-6 py-4">{entry.message}</td>
                 </tr>
               ))}
