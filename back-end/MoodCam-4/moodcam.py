@@ -1,138 +1,33 @@
-from deepface import DeepFace
-import datetime
-import json
-import pyttsx3
-import random
-import cv2
-import pandas as pd
-from fpdf import FPDF
-import shutil
-import os
-from pathlib import Path
+from PIL import Image
+import torch
+from transformers import CLIPProcessor, CLIPModel
 
-# 1. Analyse de l’émotion depuis une image
-def analyser_emotion(image_path):
-    try:
-        result = DeepFace.analyze(img_path=image_path, actions=['emotion'], enforce_detection=False)
-        return result[0]['dominant_emotion']
-    except Exception as e:
-        print("Erreur d'analyse :", e)
-        return "inconnue"
+def analyser_driver_mediapipe(image_path: str) -> int:
+    model_id = "openai/clip-vit-base-patch32"
+    model = CLIPModel.from_pretrained(model_id)
+    processor = CLIPProcessor.from_pretrained(model_id)
 
-# 2. Simuler style de conduite
-def simuler_conduite():
-    acceleration = random.choice(["normale", "forte", "faible"])
-    freinage = random.choice(["léger", "brutal", "normal"])
-    return acceleration, freinage
+    actions = [
+        "une personne qui court",
+        "une personne qui mange",
+        "une personne qui lit",
+        "une personne qui dort",
+        "une personne qui parle au téléphone",
+        "une personne qui tape sur un clavier",
+    ]
 
-# 3. Générer journal émotionnel
-def generer_journal(emotion, accel, freinage):
-    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    message = f"Émotion détectée : {emotion}. Accélération : {accel}, Freinage : {freinage}."
-    journal_entry = {
-        "timestamp": now,
-        "emotion": emotion,
-        "acceleration": accel,
-        "freinage": freinage,
-        "message": message
-    }
+    img = Image.open(image_path).convert("RGB")
+    inputs = processor(text=actions, images=img, return_tensors="pt", padding=True)
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits_per_image  # (1, len(actions))
+        probs = logits.softmax(dim=-1).squeeze()
 
-    # Lire l'existant ou démarrer une nouvelle liste
-    try:
-        with open("journal_emotionnel.json", "r", encoding="utf-8") as f:
-            data = json.load(f)
-    except (json.JSONDecodeError, FileNotFoundError):
-        data = []
+    best_idx = int(probs.argmax())
+    return best_idx
 
-    # Ajouter la nouvelle entrée
-    data.append(journal_entry)
 
-    # Réécrire proprement
-    with open("journal_emotionnel.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-
-    return message
-
-# 4. Lecture vocale
-def parler(message):
-    try:
-        engine = pyttsx3.init()
-        engine.say(message)
-        engine.runAndWait()
-    except Exception as e:
-        print("Erreur vocale :", e)
-
-# 5. Capture image depuis la webcam
-def capturer_image():
-    cam = cv2.VideoCapture(0)
-    if not cam.isOpened():
-        print("❌ Webcam non accessible")
-        return None
-
-    print("📸 Capture en cours... Regarde la caméra...")
-    ret, frame = cam.read()
-    cam.release()
-
-    if ret:
-        img_path = "capture.jpg"
-        cv2.imwrite(img_path, frame)
-        print("✅ Image capturée :", img_path)
-        return img_path
-    else:
-        print("❌ Échec de capture")
-        return None
-
-# 6. Export 
-def exporter_csv_et_pdf():
-    try:
-        # Charger directement le tableau JSON
-        with open("journal_emotionnel.json", "r", encoding="utf-8") as f:
-            data = json.load(f)  # c'est une liste d'objets
-
-        # Export CSV
-        df = pd.DataFrame(data)
-        df.to_csv("journal_emotionnel.csv", index=False)
-        print("✅ Export CSV : journal_emotionnel.csv")
-
-        # Export PDF
-        pdf = FPDF()
-        pdf.add_page()
-        pdf.set_font("Arial", size=10)
-
-        pdf.cell(200, 10, txt="Journal Émotionnel", ln=True, align="C")
-        pdf.ln(5)
-
-        for entry in data:
-            pdf.multi_cell(0, 10, 
-                txt=f"{entry['timestamp']} | Émotion: {entry['emotion']} | Accél.: {entry['acceleration']} | Freinage: {entry['freinage']}\n>> {entry['message']}",
-                border=0)
-            pdf.ln(2)
-
-        pdf.output("journal_emotionnel.pdf")
-        print("✅ Export PDF : journal_emotionnel.pdf")
-
-    except Exception as e:
-        print("❌ Erreur export CSV/PDF :", e)
-    
-# 7. Copie auto vers react    
-def copier_json_vers_react():
-    try:
-        base_dir = Path(__file__).resolve().parent
-        src = base_dir / "journal_emotionnel.json"
-        dest = base_dir.parent / "front-end" / "public" / "journal_emotionnel.json"
-        print("✅ journal_emotionnel.json copié dans React ✔️")
-    except Exception as e:
-        print("❌ Erreur lors de la copie vers React :", e)
-        
-# === Programme principal ===
 if __name__ == "__main__":
-    image_path = capturer_image()
-    if image_path:
-        emotion = analyser_emotion(image_path)
-        accel, freinage = simuler_conduite()
-        message = generer_journal(emotion, accel, freinage)
-        print("📝", message)
-        parler(message)
-        exporter_csv_et_pdf()
-        copier_json_vers_react()
-
+    path = "driver.jpg"
+    out = analyser_driver_mediapipe(path)
+    print("~~~analyser_driver_mediapipe~~~", out)

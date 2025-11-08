@@ -3,3 +3,4 @@ front-end/node_modules/
 /back-end/Safety-5/.venv
 /back-end/Driver-3/__pycache__
 /back-end/Safety-5/__pycache__
+/front-end/package-lock.json
