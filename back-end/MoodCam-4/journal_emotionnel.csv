@@ -4,3 +4,4 @@ timestamp,emotion,acceleration,freinage,message,image_name,image_size_bytes
 2025-11-08 13:04:49,neutral,faible,brutal,"Émotion détectée : neutral. Accélération : faible, Freinage : brutal.",capture.jpg,66009
 2025-11-08 13:05:02,sad,faible,léger,"Émotion détectée : sad. Accélération : faible, Freinage : léger.",capture.jpg,58374
 2025-11-08 13:05:29,happy,normale,normal,"Émotion détectée : happy. Accélération : normale, Freinage : normal.",capture.jpg,62517
+2025-11-08 13:10:51,angry,normale,brutal,"Émotion détectée : angry. Accélération : normale, Freinage : brutal.",capture.jpg,70257
