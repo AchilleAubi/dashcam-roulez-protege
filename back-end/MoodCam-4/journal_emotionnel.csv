@@ -1,12 +1,6 @@
-timestamp,emotion,acceleration,freinage,message
-2025-07-25 14:23:00,happy,normale,léger,"Émotion détectée : happy. Accélération : normale, Freinage : léger."
-2025-07-25 14:24:17,neutral,faible,brutal,"Émotion détectée : neutral. Accélération : faible, Freinage : brutal."
-2025-07-25 14:24:42,neutral,normale,brutal,"Émotion détectée : neutral. Accélération : normale, Freinage : brutal."
-2025-07-25 14:25:37,sad,forte,léger,"Émotion détectée : sad. Accélération : forte, Freinage : léger."
-2025-07-25 14:45:32,neutral,faible,normal,"Émotion détectée : neutral. Accélération : faible, Freinage : normal."
-2025-07-25 14:46:13,happy,faible,brutal,"Émotion détectée : happy. Accélération : faible, Freinage : brutal."
-2025-11-04 11:50:41,sad,normale,brutal,"Émotion détectée : sad. Accélération : normale, Freinage : brutal."
-2025-11-04 11:50:53,sad,faible,léger,"Émotion détectée : sad. Accélération : faible, Freinage : léger."
-2025-11-04 11:52:59,neutral,normale,léger,"Émotion détectée : neutral. Accélération : normale, Freinage : léger."
-2025-11-04 11:58:36,neutral,faible,léger,"Émotion détectée : neutral. Accélération : faible, Freinage : léger."
-2025-11-04 11:59:03,neutral,forte,normal,"Émotion détectée : neutral. Accélération : forte, Freinage : normal."
+timestamp,emotion,acceleration,freinage,message,image_name,image_size_bytes
+2025-11-08 12:57:16,fear,forte,léger,"Émotion détectée : fear. Accélération : forte, Freinage : léger.",capture.jpg,64649
+2025-11-08 13:04:33,angry,faible,léger,"Émotion détectée : angry. Accélération : faible, Freinage : léger.",capture.jpg,64201
+2025-11-08 13:04:49,neutral,faible,brutal,"Émotion détectée : neutral. Accélération : faible, Freinage : brutal.",capture.jpg,66009
+2025-11-08 13:05:02,sad,faible,léger,"Émotion détectée : sad. Accélération : faible, Freinage : léger.",capture.jpg,58374
+2025-11-08 13:05:29,happy,normale,normal,"Émotion détectée : happy. Accélération : normale, Freinage : normal.",capture.jpg,62517

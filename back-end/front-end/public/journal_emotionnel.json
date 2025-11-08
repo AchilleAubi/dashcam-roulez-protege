@@ -1,0 +1,107 @@
+[
+    {
+        "timestamp": "2025-07-25 14:23:00",
+        "emotion": "happy",
+        "acceleration": "normale",
+        "freinage": "léger",
+        "message": "Émotion détectée : happy. Accélération : normale, Freinage : léger."
+    },
+    {
+        "timestamp": "2025-07-25 14:24:17",
+        "emotion": "neutral",
+        "acceleration": "faible",
+        "freinage": "brutal",
+        "message": "Émotion détectée : neutral. Accélération : faible, Freinage : brutal."
+    },
+    {
+        "timestamp": "2025-07-25 14:24:42",
+        "emotion": "neutral",
+        "acceleration": "normale",
+        "freinage": "brutal",
+        "message": "Émotion détectée : neutral. Accélération : normale, Freinage : brutal."
+    },
+    {
+        "timestamp": "2025-07-25 14:25:37",
+        "emotion": "sad",
+        "acceleration": "forte",
+        "freinage": "léger",
+        "message": "Émotion détectée : sad. Accélération : forte, Freinage : léger."
+    },
+    {
+        "timestamp": "2025-07-25 14:45:32",
+        "emotion": "neutral",
+        "acceleration": "faible",
+        "freinage": "normal",
+        "message": "Émotion détectée : neutral. Accélération : faible, Freinage : normal."
+    },
+    {
+        "timestamp": "2025-07-25 14:46:13",
+        "emotion": "happy",
+        "acceleration": "faible",
+        "freinage": "brutal",
+        "message": "Émotion détectée : happy. Accélération : faible, Freinage : brutal."
+    },
+    {
+        "timestamp": "2025-11-04 11:50:41",
+        "emotion": "sad",
+        "acceleration": "normale",
+        "freinage": "brutal",
+        "message": "Émotion détectée : sad. Accélération : normale, Freinage : brutal."
+    },
+    {
+        "timestamp": "2025-11-04 11:50:53",
+        "emotion": "sad",
+        "acceleration": "faible",
+        "freinage": "léger",
+        "message": "Émotion détectée : sad. Accélération : faible, Freinage : léger."
+    },
+    {
+        "timestamp": "2025-11-04 11:52:59",
+        "emotion": "neutral",
+        "acceleration": "normale",
+        "freinage": "léger",
+        "message": "Émotion détectée : neutral. Accélération : normale, Freinage : léger."
+    },
+    {
+        "timestamp": "2025-11-04 11:58:36",
+        "emotion": "neutral",
+        "acceleration": "faible",
+        "freinage": "léger",
+        "message": "Émotion détectée : neutral. Accélération : faible, Freinage : léger."
+    },
+    {
+        "timestamp": "2025-11-04 11:59:03",
+        "emotion": "neutral",
+        "acceleration": "forte",
+        "freinage": "normal",
+        "message": "Émotion détectée : neutral. Accélération : forte, Freinage : normal."
+    },
+    {
+        "timestamp": "2025-11-08 12:27:22",
+        "emotion": "sad",
+        "acceleration": "forte",
+        "freinage": "brutal",
+        "message": "Émotion détectée : sad. Accélération : forte, Freinage : brutal."
+    },
+    {
+        "timestamp": "2025-11-08 12:28:55",
+        "emotion": "sad",
+        "acceleration": "forte",
+        "freinage": "brutal",
+        "message": "Émotion détectée : sad. Accélération : forte, Freinage : brutal."
+    },
+    {
+        "timestamp": "2025-11-08 12:30:56",
+        "emotion": "happy",
+        "acceleration": "normale",
+        "freinage": "léger",
+        "message": "Émotion détectée : happy. Accélération : normale, Freinage : léger."
+    },
+    {
+        "timestamp": "2025-11-08 12:46:35",
+        "emotion": "fear",
+        "acceleration": "forte",
+        "freinage": "léger",
+        "message": "Émotion détectée : fear. Accélération : forte, Freinage : léger."
+    }
+]

@@ -258,6 +258,7 @@ function App() {
                 <tr>
                   <th className="px-6 py-3 text-left font-semibold">Date</th>
                   <th className="px-6 py-3 text-left font-semibold">Émotion</th>
+                  <th className="px-6 py-3 text-left font-semibold">Image</th>
                   <th className="px-6 py-3 text-left font-semibold">Accélération</th>
                   <th className="px-6 py-3 text-left font-semibold">Freinage</th>
                   <th className="px-6 py-3 text-left font-semibold">Message</th>
@@ -268,6 +269,13 @@ function App() {
                   <tr key={index} style={{ backgroundColor: getEmotionColor(entry.emotion) }} className="border-b border-gray-200">
                     <td className="px-6 py-4">{entry.timestamp}</td>
                     <td className="px-6 py-4">{entry.emotion}</td>
+                    <td className="px-6 py-4">
+                      {entry.image_base64 ? (
+                        <img src={entry.image_base64} alt="Capture" className="w-20 h-auto rounded-md border border-gray-300" />
+                      ) : (
+                        <span className="text-gray-500 italic">Aucune image</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4">{entry.acceleration}</td>
                     <td className="px-6 py-4">{entry.freinage}</td>
                     <td className="px-6 py-4">{entry.message}</td>
