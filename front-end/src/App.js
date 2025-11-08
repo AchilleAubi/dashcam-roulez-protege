@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 import Safety from "./Safety";
+import DriverMonitoring from "./Driver-monitoring";
 import DashcamUI from "./DashcamUI";
 
 const API_BASE = "http://localhost:8000";
@@ -400,6 +401,8 @@ function App() {
         <DashcamUI apiBase={API_DASHCAM} />
 
         <Safety apiBase={API_SAFETY} />
+        
+        <DriverMonitoring apiBase={API_SAFETY} />
       </div>
     </div>
   );
