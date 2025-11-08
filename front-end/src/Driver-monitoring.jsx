@@ -1,8 +1,15 @@
-import { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function Safety({ apiBase = "http://localhost:8005" }) {
   const [journal, setJournal] = useState([]);
   const [filtre, setFiltre] = useState("");
+
+  useEffect(() => {
+    fetch("/journal_emotionnel.json")
+      .then((res) => res.json())
+      .then((data) => setJournal(data))
+      .catch((err) => console.error("Erreur chargement JSON", err));
+  }, []);
 
   const getEmotionColor = (emotion) => {
     switch (emotion) {
