@@ -1,0 +1,15 @@
+Surveillance du conducteur
+
+Détection de somnolence
+
+Détection de distraction (regards hors route, téléphone)
+
+Analyse des émotions:
+
+stress, colère, fatigue
+
+Alertes vocales de sécurité
+
+: "Attention, somnolence
+
+détectée"
