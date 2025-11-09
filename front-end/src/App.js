@@ -229,6 +229,31 @@ function App() {
     document.body.removeChild(link);
   };
 
+  // --- Aperçu image ---
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewSrc, setPreviewSrc] = useState(null);
+
+  const openPreview = (src) => {
+    setPreviewSrc(src);
+    setPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewSrc(null);
+  };
+
+  // Fermer avec la touche Échap
+  useEffect(() => {
+    if (!previewOpen) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") closePreview();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [previewOpen]);
+
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-4xl font-bold text-center mb-8 text-gray-800">Journal Émotionnel - MoodCam 📊</h1>
@@ -274,7 +299,12 @@ function App() {
                     <td className="px-6 py-4">{entry.emotion}</td>
                     <td className="px-6 py-4">
                       {entry.image_base64 ? (
-                        <img src={entry.image_base64} alt="Capture" className="w-20 h-auto rounded-md border border-gray-300" />
+                        <img
+                          src={entry.image_base64}
+                          alt="Capture"
+                          className="w-20 h-auto rounded-md border border-gray-300 cursor-zoom-in hover:opacity-90 transition"
+                          onClick={() => openPreview(entry.image_base64)}
+                        />
                       ) : (
                         <span className="text-gray-500 italic">Aucune image</span>
                       )}
@@ -422,6 +452,34 @@ function App() {
         <Safety apiBase={API_SAFETY} />
 
         <DriverMonitoring apiBase={API_SAFETY} />
+
+        {previewOpen && (
+          <div
+            className="fixed inset-0 z-[1000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            onClick={closePreview}
+            aria-modal="true"
+            role="dialog"
+          >
+            {/* Conteneur pour empêcher la fermeture si on clique sur l’image */}
+            <div className="relative" onClick={(e) => e.stopPropagation()}>
+              <img
+                src={previewSrc}
+                alt="Aperçu"
+                className="max-h-[90vh] max-w-[90vw] rounded-xl shadow-2xl"
+              />
+
+              {/* Bouton fermer */}
+              <button
+                onClick={closePreview}
+                aria-label="Fermer l’aperçu"
+                className="absolute -top-3 -right-3 bg-white/90 hover:bg-white text-gray-800 rounded-full w-9 h-9 shadow-md flex items-center justify-center font-bold"
+                title="Fermer"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
