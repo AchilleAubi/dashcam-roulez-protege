@@ -243,8 +243,8 @@ function App() {
               onChange={(e) => setFiltre(e.target.value.toLowerCase())}
               className="flex-1 min-w-64 px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <button 
-              onClick={exportCSV} 
+            <button
+              onClick={exportCSV}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold transition-colors"
             >
               Exporter en CSV
@@ -263,6 +263,8 @@ function App() {
                   <th className="px-6 py-3 text-left font-semibold">Accélération</th>
                   <th className="px-6 py-3 text-left font-semibold">Freinage</th>
                   <th className="px-6 py-3 text-left font-semibold">Message</th>
+                  {/* -- NOUVEAU -- */}
+                  <th className="px-6 py-3 text-left font-semibold">Conseils</th>
                 </tr>
               </thead>
               <tbody>
@@ -280,6 +282,23 @@ function App() {
                     <td className="px-6 py-4">{entry.acceleration}</td>
                     <td className="px-6 py-4">{entry.freinage}</td>
                     <td className="px-6 py-4">{entry.message}</td>
+                    <td className="px-6 py-4">
+                      {Array.isArray(entry.conseils) && entry.conseils.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {entry.conseils.slice(0, 4).map((c, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 text-xs rounded-full bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200"
+                              title={c}
+                            >
+                              {c.length > 42 ? c.slice(0, 39) + "…" : c}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 italic">Aucun conseil</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -289,7 +308,7 @@ function App() {
 
         <div className="bg-white rounded-xl p-6 shadow-md">
           <h2 className="text-2xl font-bold mb-6 text-gray-800">Flux Vidéo</h2>
-          
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="bg-gray-800 rounded-xl overflow-hidden">
@@ -321,7 +340,7 @@ function App() {
               </div>
 
               <div className="text-sm text-gray-600">
-                Caméra: <span className="font-semibold">{mediaStream ? "ON" : "OFF"}</span> • 
+                Caméra: <span className="font-semibold">{mediaStream ? "ON" : "OFF"}</span> •
                 Enregistrement: <span className="font-semibold">{isRecording ? "EN COURS..." : "—"}</span>
               </div>
             </div>
@@ -372,7 +391,7 @@ function App() {
                 Rafraîchir
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {clipsServer.map((c) => (
                 <div key={c.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-md">
@@ -401,7 +420,7 @@ function App() {
         <DashcamUI apiBase={API_DASHCAM} />
 
         <Safety apiBase={API_SAFETY} />
-        
+
         <DriverMonitoring apiBase={API_SAFETY} />
       </div>
     </div>
