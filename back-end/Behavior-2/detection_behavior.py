@@ -46,9 +46,9 @@ if use_edgetpu:
 else:
     model_path = 'yolov8n.tflite'
 
-interpreter = load_tflite_interpreter(model_path, use_edgetpu=use_edgetpu)
-input_details = interpreter.get_input_details()
-output_details = interpreter.get_output_details()
+# interpreter = load_tflite_interpreter(model_path, use_edgetpu=use_edgetpu)
+# input_details = interpreter.get_input_details()
+# output_details = interpreter.get_output_details()
 
 
 
@@ -208,7 +208,7 @@ class SimpleTracker(TrackerWrapper):
 
 
 class DeepSORTTracker(TrackerWrapper):
-    def __init__(self, max_age=5):
+    def __init__(self, max_age=2):
         super().__init__(tracker_type='deepsort')
         if not DEEPSORT_AVAILABLE:
             raise RuntimeError("DeepSORT non installé. pip install deep-sort-realtime")
@@ -710,8 +710,8 @@ def process_video(video_path, tracker_type='simple', cpu_only=False,
     yolo = YOLO(YOLO_MODEL)
     print(f"YOLO chargé: {YOLO_MODEL}")
     
-    depth_model = MiDaSDepth(device=device, small=midas_small)
-    # depth_model = None
+    # depth_model = MiDaSDepth(device=device, small=midas_small)
+    depth_model = None
 
     
     tracker = create_tracker(tracker_type)
@@ -1223,7 +1223,9 @@ def start_realtime_detection(tracker_type='simple', use_webcam=True, webcam_id=0
 def generate_realtime_frames(tracker_type='simple', use_webcam=True, webcam_id=0):
     cap = cv2.VideoCapture(webcam_id if use_webcam else VIDEO_PATH)
     yolo = YOLO(YOLO_MODEL)
-    depth_model = MiDaSDepth(device=DEVICE)
+    # depth_model = MiDaSDepth(device=DEVICE)
+    depth_model = SimplifiedDepth()
+
     tracker = create_tracker(tracker_type)
 
     lx, rx, lane_type, M, Minv = 0, 0, 'unknown', None, None

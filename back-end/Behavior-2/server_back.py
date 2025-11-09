@@ -123,8 +123,8 @@ def detection_loop(tracker_type='simple', use_webcam=True, webcam_id=0, video_pa
     
     try:
         yolo = dashcam.YOLO(dashcam.YOLO_MODEL)
-        depth_model = dashcam.MiDaSDepth(device=dashcam.DEVICE)
-        # depth_model = dashcam.SimplifiedDepth()
+        # depth_model = dashcam.MiDaSDepth(device=dashcam.DEVICE)
+        depth_model = dashcam.SimplifiedDepth()
         tracker = dashcam.create_tracker(tracker_type)
         print("Modèles chargés avec succès\n")
     except Exception as e:
