@@ -1,9 +1,9 @@
 """
- python script.py                           # SimpleTracker (baseline)
- python script.py --tracker deepsort        # Avec DeepSORT
- python script.py --tracker bytetrack       # Avec ByteTrack
- python script.py --run-tests               # Lancer les tests
- python script.py --cpu-only                # Optimisations CPU
+ python detection_behavior.py                           # SimpleTracker (baseline)
+ python detection_behavior.py --tracker deepsort        # Avec DeepSORT
+ python detection_behavior.py --tracker bytetrack       # Avec ByteTrack
+ python detection_behavior.py --run-tests               # Lancer les tests
+ python detection_behavior.py --cpu-only                # Optimisations CPU
 
 """
 
@@ -21,6 +21,7 @@ import threading
 import base64
 import io
 from audio_alerts import AudioAlertManager
+from tflite_utils import load_tflite_interpreter
 
 try:
     from deep_sort_realtime.deepsort_tracker import DeepSort
@@ -36,9 +37,25 @@ except ImportError:
     BYTETRACK_AVAILABLE = False
     print("⚠️  ByteTrack non disponible. Install: pip install byte-tracker")
 
+
+model_path = 'yolov8n.tflite'
+use_edgetpu = False  # True si Coral est connecté
+
+if use_edgetpu:
+        model_path = 'yolov8n_full_integer_quant_edgetpu.tflite'
+else:
+    model_path = 'yolov8n.tflite'
+
+interpreter = load_tflite_interpreter(model_path, use_edgetpu=use_edgetpu)
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
+
+
+
 VIDEO_PATH = 'video_test_3.mp4'
 YOLO_MODEL = 'yolov8n.pt'
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+USE_MIDAS_DEPTH = False
 
 IOU_MATCH_THRESHOLD = 0.3
 DISTANCE_ALERT_THRESHOLD = 0.45
@@ -75,6 +92,47 @@ def iou(boxA, boxB):
     boxBArea = max(0, (boxB[2]-boxB[0])) * max(0, (boxB[3]-boxB[1]))
     union = boxAArea + boxBArea - interArea
     return interArea / union if union > 0 else 0
+
+def detect_with_tflite(frame, interpreter, input_details, output_details):
+    input_shape = input_details[0]['shape']
+    height, width = input_shape[1], input_shape[2]
+    
+    img_resized = cv2.resize(frame, (width, height))
+    img_rgb = cv2.cvtColor(img_resized, cv2.COLOR_BGR2RGB)
+    
+    if input_details[0]['dtype'] == np.uint8:
+        input_data = np.expand_dims(img_rgb, axis=0).astype(np.uint8)
+    else:
+        input_data = np.expand_dims(img_rgb / 255.0, axis=0).astype(np.float32)
+    
+    interpreter.set_tensor(input_details[0]['index'], input_data)
+    interpreter.invoke()
+    
+    output = interpreter.get_tensor(output_details[0]['index'])[0]
+    
+    if len(output.shape) == 2 and output.shape[0] < output.shape[1]:
+        output = output.T
+    
+    boxes = output[:, :4]  
+    scores = output[:, 4:].max(axis=1)
+    classes = output[:, 4:].argmax(axis=1)
+    
+    h_frame, w_frame = frame.shape[:2]
+    scale_x = w_frame / width
+    scale_y = h_frame / height
+    
+    boxes_xyxy = []
+    for box in boxes:
+        x_center, y_center, w, h = box
+        x1 = (x_center - w/2) * scale_x
+        y1 = (y_center - h/2) * scale_y
+        x2 = (x_center + w/2) * scale_x
+        y2 = (y_center + h/2) * scale_y
+        boxes_xyxy.append([x1, y1, x2, y2])
+    
+    return np.array(boxes_xyxy), classes, scores
+
+
 
 def box_center(box):
     return ((box[0]+box[2])/2, (box[1]+box[3])/2)
@@ -364,6 +422,38 @@ class MiDaSDepth:
         
         return norm
 
+class SimplifiedDepth:
+    def __init__(self, device='cpu', small=True):
+        self.device = device
+        print("SimplifiedDepth activé (optimisé avec box_size_ratio)")
+        print("   → 100x plus rapide que depth map classique")
+    
+    def predict(self, frame):
+        h, w = frame.shape[:2]
+        y_grid = np.linspace(1.0, 0.0, h).reshape(-1, 1)
+        return np.tile(y_grid, (1, w))
+    
+    def get_box_depth(self, box, frame_shape):
+        size_ratio = box_size_ratio(box, frame_shape)
+        
+        y_center = (box[1] + box[3]) / 2
+        y_ratio = y_center / frame_shape[0]
+        
+        depth_from_size = 1.0 - min(size_ratio * 4, 1.0)
+        depth_from_y = y_ratio 
+        
+        depth_val = 0.8 * depth_from_size + 0.2 * depth_from_y
+        
+        return max(0.0, min(1.0, depth_val))
+    
+
+def box_size_ratio(box, frame_shape):
+    h, w = frame_shape[:2]
+    box_area = (box[2] - box[0]) * (box[3] - box[1])
+    frame_area = h * w
+    return box_area / frame_area
+
+
 
 def estimate_global_optical_flow(prev_gray, gray):
     """Calcule le flux optique global (avg_x, avg_y)"""
@@ -418,7 +508,7 @@ def log_event(event_type, tid, msg, box, frame, timestamp):
 
 def analyze_tracks_and_log(tracker_history, depth_map, frame_shape, 
                            perspective_M, lane_type, flow_vec, 
-                           frame_time, frame, use_logging=True):
+                           frame_time, frame, use_logging=True, depth_model=None):
     alerts = []
     alert_types_this_frame = []
     h, w = frame_shape[:2]
@@ -457,15 +547,18 @@ def analyze_tracks_and_log(tracker_history, depth_map, frame_shape,
                 lane_pos = 'unknown'
         
         info.setdefault('lane_history', []).append(lane_pos)
-        
-        cx1, cy1, cx2, cy2 = map(int, [x1, y1, x2, y2])
-        cx1 = max(0, cx1)
-        cy1 = max(0, cy1)
-        cx2 = min(w-1, cx2)
-        cy2 = min(h-1, cy2)
-        
-        crop = depth_map[cy1:cy2, cx1:cx2]
-        depth_val = float(np.median(crop)) if crop.size > 0 else 1.0
+
+        if hasattr(depth_model, 'get_box_depth'):
+            depth_val = depth_model.get_box_depth(box, frame_shape)
+        else:
+            cx1, cy1, cx2, cy2 = map(int, [x1, y1, x2, y2])
+            cx1 = max(0, cx1)
+            cy1 = max(0, cy1)
+            cx2 = min(w-1, cx2)
+            cy2 = min(h-1, cy2)
+            
+            crop = depth_map[cy1:cy2, cx1:cx2]
+            depth_val = float(np.median(crop)) if crop.size > 0 else 1.0
         
         info.setdefault('depths', []).append(depth_val)
         info.setdefault('timestamps', []).append(frame_time)
@@ -618,6 +711,8 @@ def process_video(video_path, tracker_type='simple', cpu_only=False,
     print(f"YOLO chargé: {YOLO_MODEL}")
     
     depth_model = MiDaSDepth(device=device, small=midas_small)
+    # depth_model = None
+
     
     tracker = create_tracker(tracker_type)
     print(f"Tracker initialisé: {tracker.tracker_type.upper()}\n")
@@ -676,7 +771,7 @@ def process_video(video_path, tracker_type='simple', cpu_only=False,
         
         alerts = analyze_tracks_and_log(
             tracks, depth_map, frame.shape, M, lane_type,
-            flow_vec, tnow, frame, use_logging=True
+            flow_vec, tnow, frame, use_logging=True, depth_model=depth_model
         )
         
         alert_count += len(alerts)
@@ -765,6 +860,234 @@ def process_video(video_path, tracker_type='simple', cpu_only=False,
     print(f"Alertes générées: {alert_count}")
     print(f"Log CSV: {LOG_CSV}")
     print(f" Miniatures: {THUMBS_DIR}/")
+    print(f"{'='*60}\n")
+
+
+
+def process_video_tflite(video_path, use_edgetpu=False, tracker_type='simple', 
+                         cpu_only=True, run_display=True, skip_frames=0, 
+                         use_webcam=False, webcam_id=0):
+
+    print(f"\n{'='*60}")
+    print(f"Détection avec TFLite {'+ EdgeTPU' if use_edgetpu else ''}")
+    print(f"{'='*60}")
+    
+    if use_webcam:
+        print(f"Source: WEBCAM #{webcam_id}")
+        cap = cv2.VideoCapture(webcam_id)
+        if not cap.isOpened():
+            raise RuntimeError(f"Impossible d'ouvrir la webcam #{webcam_id}")
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        cap.set(cv2.CAP_PROP_FPS, 30)
+    else:
+        print(f"Source: {video_path}")
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            raise RuntimeError(f"Impossible d'ouvrir la vidéo: {video_path}")
+    
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    if use_webcam:
+        print(f"FPS: {fps:.1f} | Mode: TEMPS RÉEL")
+        total_frames = float('inf')
+    else:
+        print(f"FPS: {fps:.1f} | Frames: {total_frames}")
+    
+    print("\nChargement des modèles...")
+    if use_edgetpu:
+        model_path = 'yolov8n_full_integer_quant_edgetpu.tflite'
+        print(f"Modèle EdgeTPU: {model_path}")
+    else:
+        model_path = 'yolov8n.tflite'
+        print(f"Modèle TFLite: {model_path}")
+    
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(
+            f"Modèle {model_path} introuvable. "
+            f"Exécutez: from ultralytics import YOLO; "
+            f"YOLO('yolov8n.pt').export(format='{'edgetpu' if use_edgetpu else 'tflite'}')"
+        )
+    
+    try:
+        from tflite_utils import load_tflite_interpreter
+        interpreter = load_tflite_interpreter(model_path, use_edgetpu=use_edgetpu)
+        input_details = interpreter.get_input_details()
+        output_details = interpreter.get_output_details()
+        print(f"TFLite chargé avec succès")
+    except Exception as e:
+        print(f"Erreur chargement TFLite: {e}")
+        raise
+    
+    depth_model = SimplifiedDepth()
+    print("SimplifiedDepth chargé (optimisé)")
+    
+    tracker = create_tracker(tracker_type)
+    print(f"Tracker initialisé: {tracker.tracker_type.upper()}\n")
+    
+    ret, prev_frame = cap.read()
+    if not ret:
+        raise RuntimeError("Vidéo vide ou illisible")
+    
+    lx, rx, lane_type, M, Minv = detect_lane_lines_and_type(prev_frame)
+    prev_gray = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
+    print(f"Lanes détectées: type={lane_type}, left_x={lx}, right_x={rx}\n")
+    
+    frame_idx = 0
+    start_time = time.time()
+    alert_count = 0
+    
+    print("Début de la détection...\n")
+    
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        
+        if skip_frames > 0 and frame_idx % (skip_frames + 1) != 0:
+            frame_idx += 1
+            continue
+        
+        tnow = time.time()
+        h, w = frame.shape[:2]
+        
+        try:
+            boxes, classes, scores = detect_with_tflite(
+                frame, interpreter, input_details, output_details
+            )
+        except Exception as e:
+            print(f"Erreur détection TFLite: {e}")
+            frame_idx += 1
+            continue
+        
+        detections = []
+        for i in range(len(scores)):
+            if scores[i] > 0.3:  
+                box = boxes[i]
+                x1, y1, x2, y2 = map(int, box)
+                if x1 >= 0 and y1 >= 0 and x2 <= w and y2 <= h and x2 > x1 and y2 > y1:
+                    detections.append({
+                        'box': [x1, y1, x2, y2],
+                        'class': int(classes[i]),
+                        'conf': float(scores[i])
+                    })
+        
+        if tracker.tracker_type in ['deepsort', 'bytetrack']:
+            tracks = tracker.update(detections, frame=frame)
+        else:
+            tracks = tracker.update(detections)
+        
+        depth_map = depth_model.predict(frame)
+        
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        flow_vec = estimate_global_optical_flow(prev_gray, gray)
+        prev_gray = gray
+        
+        alerts = analyze_tracks_and_log(
+            tracks, depth_map, frame.shape, M, lane_type,
+            flow_vec, tnow, frame, use_logging=True, depth_model=depth_model
+        )
+        
+        alert_count += len(alerts)
+        
+        vis_frame = frame.copy()
+        
+        for tid, info in tracks.items():
+            if len(info['boxes']) == 0:
+                continue
+            
+            box = info['boxes'][-1]
+            x1, y1, x2, y2 = map(int, box)
+            cls = info['classes'][-1] if info['classes'] else -1
+            
+            if cls == PERSON_CLASS:
+                color = (0, 165, 255)  
+            elif cls in VEHICLE_CLASSES:
+                color = (0, 255, 0)  
+            else:
+                color = (128, 128, 128)  
+            
+            cv2.rectangle(vis_frame, (x1, y1), (x2, y2), color, 2)
+            
+            label = f'ID{tid}'
+            if cls == PERSON_CLASS:
+                label += ' (Pieton)'
+            elif cls in VEHICLE_CLASSES:
+                label += f' (Vehicule)'
+            
+            cv2.putText(vis_frame, label, (x1, y1 - 6),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        
+        cv2.line(vis_frame, (int(lx), int(h*0.6)), (int(lx), h), (255, 0, 0), 2)
+        cv2.line(vis_frame, (int(rx), int(h*0.6)), (int(rx), h), (255, 0, 0), 2)
+        
+        info_y = 30
+        mode_text = f'TFLite{"+ EdgeTPU" if use_edgetpu else ""}'
+        cv2.putText(vis_frame, f'Mode: {mode_text}',
+                   (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        info_y += 30
+        cv2.putText(vis_frame, f'Tracker: {tracker.tracker_type.upper()}',
+                   (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        info_y += 30
+        cv2.putText(vis_frame, f'Lane: {lane_type}',
+                   (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        info_y += 30
+        cv2.putText(vis_frame, f'Tracks: {len(tracks)}',
+                   (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        
+        if use_webcam:
+            info_y += 30
+            cv2.putText(vis_frame, f'Mode: WEBCAM (temps reel)',
+                       (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+        else:
+            info_y += 30
+            cv2.putText(vis_frame, f'Frame: {frame_idx}/{total_frames}',
+                       (10, info_y), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
+        
+        for i, (tid, evtype, msg, box) in enumerate(alerts):
+            x1, y1, x2, y2 = map(int, box)
+            cv2.rectangle(vis_frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
+            cv2.putText(vis_frame, msg, 
+                       (max(10, x1 - 10), max(30, y1 - 10)),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        
+        if run_display:
+            cv2.imshow('Detection TFLite', vis_frame)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord('q'):
+                print("\nArret demande par l'utilisateur")
+                break
+            elif key == ord('p'):
+                cv2.waitKey(0)  
+        
+        frame_idx += 1
+        
+        if frame_idx % 30 == 0 and not use_webcam:
+            elapsed = time.time() - start_time
+            fps_actual = frame_idx / elapsed if elapsed > 0 else 0
+            print(f"Frame {frame_idx}/{total_frames} | "
+                  f"FPS: {fps_actual:.1f} | Alertes: {alert_count}")
+        elif frame_idx % 100 == 0 and use_webcam:
+            elapsed = time.time() - start_time
+            fps_actual = frame_idx / elapsed if elapsed > 0 else 0
+            print(f"Frames traites: {frame_idx} | "
+                  f"FPS: {fps_actual:.1f} | Alertes: {alert_count}")
+    
+    cap.release()
+    if run_display:
+        cv2.destroyAllWindows()
+    
+    elapsed = time.time() - start_time
+    print(f"\n{'='*60}")
+    print(f"Traitement termine!")
+    print(f"{'='*60}")
+    print(f"Temps total: {elapsed:.1f}s")
+    print(f"Frames traitees: {frame_idx}")
+    print(f"FPS moyen: {frame_idx/elapsed:.1f}" if elapsed > 0 else "N/A")
+    print(f"Alertes generees: {alert_count}")
+    print(f"Log CSV: {LOG_CSV}")
+    print(f"Miniatures: {THUMBS_DIR}/")
     print(f"{'='*60}\n")
 
 
@@ -969,12 +1292,11 @@ if __name__ == '__main__':
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Commandes exemples:
-  python script.py                                 # SimpleTracker (baseline)
-  python script.py --tracker deepsort              # Avec DeepSORT
-  python script.py --tracker bytetrack             # Avec ByteTrack
-  python script.py --tracker deepsort --cpu-only   # DeepSORT en mode CPU
-  python script.py --run-tests                     # Tests unitaires
-  python script.py --video ma_video.mp4 --skip 2   # Skip 2 frames sur 3
+  python detection_behavior.py                                 # SimpleTracker (baseline)
+  python detection_behavior.py --tracker deepsort              # Avec DeepSORT
+  python detection_behavior.py --use-tflite                    # Avec TFLite
+  python detection_behavior.py --use-tflite --use-edgetpu      # Avec Coral EdgeTPU
+  python detection_behavior.py --run-tests                     # Tests unitaires
         """
     )
     
@@ -984,6 +1306,12 @@ Commandes exemples:
     parser.add_argument('--tracker', default='simple',
                        choices=['simple', 'deepsort', 'bytetrack'],
                        help='Type de tracker à utiliser (défaut: simple)')
+    
+    parser.add_argument('--use-tflite', action='store_true',
+                       help='Utiliser TFLite au lieu de PyTorch')
+    
+    parser.add_argument('--use-edgetpu', action='store_true',
+                       help='Activer Google Coral EdgeTPU (nécessite --use-tflite)')
     
     parser.add_argument('--run-tests', action='store_true',
                        help='Lancer les tests unitaires au lieu du traitement')
@@ -1005,37 +1333,53 @@ Commandes exemples:
     
     args = parser.parse_args()
     
+    if args.use_edgetpu and not args.use_tflite:
+        print("Erreur: --use-edgetpu nécessite --use-tflite")
+        exit(1)
+    
     if args.run_tests:
         success = run_sanity_tests()
         exit(0 if success else 1)
     
     try:
         if not args.webcam and not os.path.exists(args.video):
-            print(f"❌ Erreur: Vidéo introuvable: {args.video}")
+            print(f"Erreur: Vidéo introuvable: {args.video}")
             exit(1)
         
         if args.tracker == 'deepsort' and not DEEPSORT_AVAILABLE:
-            print(" DeepSORT non disponible, utilisation de SimpleTracker")
+            print("DeepSORT non disponible, utilisation de SimpleTracker")
             args.tracker = 'simple'
         
         if args.tracker == 'bytetrack' and not BYTETRACK_AVAILABLE:
             print("ByteTrack non disponible, utilisation de SimpleTracker")
             args.tracker = 'simple'
         
-        process_video(
-            video_path=args.video,
-            tracker_type=args.tracker,
-            cpu_only=args.cpu_only,
-            run_display=not args.no_display,
-            skip_frames=args.skip,
-            use_webcam=args.webcam,
-            webcam_id=args.webcam_id
-        )
+        if args.use_tflite:
+            process_video_tflite(
+                video_path=args.video,
+                use_edgetpu=args.use_edgetpu,
+                tracker_type=args.tracker,
+                cpu_only=args.cpu_only,
+                run_display=not args.no_display,
+                skip_frames=args.skip,
+                use_webcam=args.webcam,
+                webcam_id=args.webcam_id
+            )
+        else:
+            process_video(
+                video_path=args.video,
+                tracker_type=args.tracker,
+                cpu_only=args.cpu_only,
+                run_display=not args.no_display,
+                skip_frames=args.skip,
+                use_webcam=args.webcam,
+                webcam_id=args.webcam_id
+            )
         
     except KeyboardInterrupt:
-        print("\n\n Interruption clavier (Ctrl+C)")
+        print("\n\nInterruption clavier (Ctrl+C)")
     except Exception as e:
-        print(f"\n ERREUR: {e}")
+        print(f"\nERREUR: {e}")
         import traceback
         traceback.print_exc()
         exit(1)

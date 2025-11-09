@@ -1,9 +1,30 @@
+# ========================================
+# INSTALLATION
+# ========================================
+
 pip install -r pip-requirements.txt
+
+
+# ========================================
+# CONVERSION MODÈLE YOLO EN TFLITE
+# ========================================
+
+# Convertir YOLOv8 en TFLite standard (pour CPU/GPU)
+python -c "from ultralytics import YOLO; YOLO('yolov8n.pt').export(format='tflite')"
+
+# Convertir YOLOv8 en TFLite pour Coral EdgeTPU (quantification INT8)
+python -c "from ultralytics import YOLO; YOLO('yolov8n.pt').export(format='edgetpu')"
+
+# Note: Cela génère:
+# - yolov8n.tflite (standard)
+# - yolov8n_full_integer_quant_edgetpu.tflite (pour Coral)
 
 
 # ========================================
 # SCRIPT DE DÉTECTION (detection_behavior.py)
 # ========================================
+
+# --- MODE PYTORCH (PC avec GPU) ---
 
 # Mode Simple (baseline)
 python detection_behavior.py
@@ -24,38 +45,77 @@ python detection_behavior.py --tracker deepsort --cpu-only
 python detection_behavior.py --video ma_video.mp4
 python detection_behavior.py --video ma_video.mp4 --tracker bytetrack
 
-# Skip frames (pour accélérer)
+# Skip frames (pour accélérer le traitement)
 python detection_behavior.py --skip 2
+python detection_behavior.py --webcam --skip 3
 
-# Sans affichage vidéo
+# Sans affichage vidéo (économie de ressources)
 python detection_behavior.py --no-display
+python detection_behavior.py --webcam --no-display --cpu-only
 
-# Lancer les tests
+# Lancer les tests unitaires
 python detection_behavior.py --run-tests
 
+
+# --- MODE TFLITE (RASPBERRY PI) ---
+
+# TFLite standard (sans Coral)
+python detection_behavior.py --use-tflite --webcam
+python detection_behavior.py --use-tflite --webcam --tracker simple
+
+# TFLite avec Coral EdgeTPU (accélération matérielle)
+python detection_behavior.py --use-tflite --use-edgetpu --webcam
+python detection_behavior.py --use-tflite --use-edgetpu --webcam --tracker simple
+
+# Configuration optimisée Raspberry Pi (sans Coral)
+python detection_behavior.py --use-tflite --webcam --skip 2 --no-display
+
+# Configuration optimisée Raspberry Pi (avec Coral)
+python detection_behavior.py --use-tflite --use-edgetpu --webcam --skip 1 --no-display
+
+# Avec vidéo fichier
+python detection_behavior.py --use-tflite --video test.mp4
+python detection_behavior.py --use-tflite --use-edgetpu --video test.mp4
+
+
 # ========================================
-# SERVEUR FLASK (server.py)
+# SERVEUR FLASK (server_back.py)
 # ========================================
+
+# --- MODE PYTORCH (PC) ---
 
 # Mode webcam (par défaut)
-python server.py
+python server_back.py
 
 # Avec tracker spécifique
-python server.py --tracker deepsort
-python server.py --tracker bytetrack
+python server_back.py --tracker deepsort
+python server_back.py --tracker bytetrack
 
 # Mode vidéo (fichier)
-python server.py --video test.mp4
-python server.py --video test.mp4 --tracker bytetrack
+python server_back.py --video test.mp4
+python server_back.py --video test.mp4 --tracker bytetrack
 
 # Port personnalisé
-python server.py --port 8080
+python server_back.py --port 8080
 
 # Webcam spécifique
-python server.py --webcam-id 1
+python server_back.py --webcam-id 1
 
 # Configuration complète
-python server.py --tracker deepsort --webcam-id 0 --port 8003 --host 0.0.0.0
+python server_back.py --tracker deepsort --webcam-id 0 --port 8003 --host 0.0.0.0
+
+
+# --- MODE TFLITE (RASPBERRY PI) ---
+
+# TFLite standard
+python server_back.py --use-tflite --tracker simple
+
+# TFLite avec Coral EdgeTPU
+python server_back.py --use-tflite --use-edgetpu --tracker simple
+
+# Configuration complète Raspberry Pi + Coral
+python server_back.py --use-tflite --use-edgetpu --tracker simple --port 8003 --host 0.0.0.0
+
 
 # ========================================
 # ENDPOINTS DU SERVEUR
@@ -64,24 +124,125 @@ python server.py --tracker deepsort --webcam-id 0 --port 8003 --host 0.0.0.0
 # Interface web
 http://localhost:8003/
 
-# Flux vidéo
+# Flux vidéo MJPEG
 http://localhost:8003/video
 
-# Alertes JSON
+# Alertes JSON (dernières 15)
 http://localhost:8003/alerts
 
-# Statistiques
+# Statistiques système
 http://localhost:8003/stats
 
 # Arrêter le système (POST)
 curl -X POST http://localhost:8003/stop
 
+
 # ========================================
-# COMMANDES RECOMMANDÉES POUR DÉMARRER
+# COMMANDES RECOMMANDÉES PAR PLATEFORME
 # ========================================
 
+# --- SUR PC (DÉVELOPPEMENT) ---
+
 # Tester rapidement avec webcam
-python server.py
+python server_back.py
 
 # Détection simple
 python detection_behavior.py --webcam
+
+# Avec DeepSORT (meilleur tracking, plus lourd)
+python server_back.py --tracker deepsort
+
+# Avec vidéo de test
+python detection_behavior.py --video video_test_3.mp4 --tracker bytetrack
+
+
+# --- SUR RASPBERRY PI (SANS CORAL) ---
+
+# Configuration de base
+python detection_behavior.py --use-tflite --webcam --skip 2
+
+# Serveur web optimisé
+python server_back.py --use-tflite --tracker simple
+
+# Mode ultra-léger (sans affichage)
+python detection_behavior.py --use-tflite --webcam --skip 3 --no-display
+
+
+# --- SUR RASPBERRY PI (AVEC CORAL) ---
+
+# Configuration recommandée
+python detection_behavior.py --use-tflite --use-edgetpu --webcam
+
+# Serveur web avec Coral
+python server_back.py --use-tflite --use-edgetpu --tracker simple --host 0.0.0.0
+
+# Performances maximales
+python detection_behavior.py --use-tflite --use-edgetpu --webcam --skip 1
+
+
+# ========================================
+# VÉRIFICATIONS MATÉRIEL
+# ========================================
+
+# Vérifier CUDA disponible (PC avec GPU)
+python -c "import torch; print('CUDA:', torch.cuda.is_available())"
+
+# Lister les webcams disponibles (Linux)
+ls /dev/video*
+
+# Vérifier détection Google Coral (Raspberry Pi)
+lsusb | grep "Global Unichip"
+
+# Tester différentes webcams
+python detection_behavior.py --webcam --webcam-id 0
+python detection_behavior.py --webcam --webcam-id 1
+
+
+# ========================================
+# DÉPANNAGE
+# ========================================
+
+# Erreur CUDA sur PC
+pip uninstall torch torchvision
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+
+# Webcam non détectée
+v4l2-ctl --list-devices  # Linux
+# Puis tester avec --webcam-id approprié
+
+# Modèle TFLite introuvable
+# Vérifier que la conversion a été faite:
+ls -lh yolov8n*.tflite
+
+# Performance faible sur Raspberry Pi
+# Augmenter le swap:
+sudo dphys-swapfile swapoff
+sudo nano /etc/dphys-swapfile  # Modifier CONF_SWAPSIZE=2048
+sudo dphys-swapfile setup
+sudo dphys-swapfile swapon
+
+# Coral non détecté
+# Réinstaller les drivers:
+sudo apt install -y libedgetpu1-std
+sudo reboot
+
+
+# ========================================
+# BENCHMARKS
+# ========================================
+
+# Tester performances PyTorch vs TFLite (traiter 100 frames)
+python detection_behavior.py --video test.mp4 --skip 0  # PyTorch
+python detection_behavior.py --video test.mp4 --skip 0 --use-tflite  # TFLite
+python detection_behavior.py --video test.mp4 --skip 0 --use-tflite --use-edgetpu  # Coral
+
+
+# ========================================
+# NOTES IMPORTANTES
+# ========================================
+
+# 1. Sur PC: utiliser PyTorch (meilleure précision, GPU disponible)
+# 2. Sur Raspberry Pi sans Coral: utiliser --use-tflite --skip 2 minimum
+# 3. Sur Raspberry Pi avec Coral: utiliser --use-tflite --use-edgetpu
+# 4. Pour production: toujours utiliser --no-display pour économiser ressources
+# 5. SimplifiedDepth est automatiquement utilisé avec TFLite (100x plus rapide)
