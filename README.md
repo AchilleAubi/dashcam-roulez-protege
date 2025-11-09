@@ -102,7 +102,7 @@
 - Mémoire : 8GB RAM minimum
 
 **Configuration finale (embarquée) :**
-- Raspberry Pi 4 (4GB RAM)
+- Raspberry Pi 4 (8GB RAM)
 - Accélérateur Google Coral (EdgeTPU)
 - 2 caméras : avant (1080p) + conducteur (720p)
 - Module GPS
