@@ -6,7 +6,7 @@
 
 ### Équipe de Développement
 
-- **Rakotoarimanana Nampina Fanamperana – N26** : Enregistrement & Surveillance Vidéo
+- **Rakotoarimanana Nampiana Fanamperana – N26** : Enregistrement & Surveillance Vidéo
 - **Andrianirimanjaka Onja Mbola – N7** : Analyse du Comportement Routier
 - **Andriantsitohaina Lahatra Mamy Hajaina – N11** : Surveillance du Conducteur
 - **Fanomezantsoa Achille Aubin – N14** : MoodCam & Journal Émotionnel
@@ -18,7 +18,7 @@
 
 ### 1. Enregistrement & Surveillance Vidéo
 
-**Responsable : Nampina (N26)**
+**Responsable : Nampiana (N26)**
 
 - Enregistrement vidéo en boucle (caméra avant & conducteur)
 - Sauvegarde automatique en cas d'incident détecté

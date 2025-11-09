@@ -203,9 +203,9 @@ def generer_journal(emotion: str, accel: str, freinage: str, image_path: Optiona
         "niveau_risque": niveau_risque,
         "motifs_risque": motifs,
         "conseils": conseils,
-        "alerte_vocale": alerte,       # ex: “Attention, somnolence détectée…”
-        "message": message,            # phrase synthèse
-        "image_base64": image_base64,  # data URL pour <img src="..."/>
+        "alerte_vocale": alerte,
+        "message": message,
+        "image_base64": image_base64,
         "image_name": image_name,
         "image_size_bytes": image_size_bytes
     }
@@ -247,11 +247,7 @@ def _init_tts():
             _ENGINE = pyttsx3.init(driverName='espeak')
             # Réglages doux et intelligibles
             _ENGINE.setProperty('rate', 165)   # vitesse
-            _ENGINE.setProperty('volume', 1.0) # volume 0.0–1.0
-            # Optionnel : choisir une voix FR si dispo
-            # for v in _ENGINE.getProperty('voices'):
-            #     if 'fr' in v.languages or 'fr_' in getattr(v, 'id', ''):
-            #         _ENGINE.setProperty('voice', v.id); break
+            _ENGINE.setProperty('volume', 1.0)
         except Exception as e:
             print("⚠️ pyttsx3 init a échoué :", e)
             _ENGINE = None
@@ -289,7 +285,6 @@ def parler_queue(texts):
     # --- Fallback CLI (espeak) pour éviter tout segfault pyttsx3 ---
     for t in texts:
         try:
-            # -s = vitesse ; ajuste au besoin (165 ≈ medium)
             subprocess.run(["espeak", "-s", "165", t], check=False)
         except Exception as e2:
             print("⚠️ Fallback espeak a échoué :", e2)

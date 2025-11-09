@@ -4,47 +4,36 @@ import cv2
 import mediapipe as mp
 import pyttsx3
 
-# ------------------ Utils géométriques ------------------
 def euclid(p1, p2):
     return np.linalg.norm(np.array(p1) - np.array(p2))
 
-# EAR (Eye Aspect Ratio) très utilisé pour la somnolence: plus il est bas, plus l’œil est fermé.
 def eye_EAR(landmarks, eye_idx):
     p1, p2, p3, p4, p5, p6 = [landmarks[i] for i in eye_idx]
-    # (||p2-p6|| + ||p3-p5||) / (2*||p1-p4||)
     num = euclid(p2, p6) + euclid(p3, p5)
     den = 2.0 * euclid(p1, p4)
     return num / den if den > 0 else 0.0
 
-# Yaw/Pitch approximés via quelques repères 2D: vecteurs yeux + nez.
 def head_yaw_pitch(landmarks):
-    # centres des yeux = moyenne de 2 coins
     left_outer, left_inner = landmarks[33], landmarks[133]
     right_outer, right_inner = landmarks[362], landmarks[263]
     left_center = ((left_outer[0] + left_inner[0]) / 2, (left_outer[1] + left_inner[1]) / 2)
     right_center = ((right_outer[0] + right_inner[0]) / 2, (right_outer[1] + right_inner[1]) / 2)
     eye_vec = (right_center[0] - left_center[0], right_center[1] - left_center[1])
 
-    # Yaw ~ angle par rapport à l’horizontale (en degrés)
     yaw = math.degrees(math.atan2(eye_vec[1], eye_vec[0]))
 
-    # Pitch ~ rapport distance nez-entre-yeux vs distance inter-yeux
-    nose_tip = landmarks[1]  # pointe du nez approx (FaceMesh idx 1)
+    nose_tip = landmarks[1]
     eyes_mid = ((left_center[0] + right_center[0]) / 2, (left_center[1] + right_center[1]) / 2)
     inter_eye = euclid(left_center, right_center)
     nose_drop = eyes_mid[1] - nose_tip[1]
     pitch = math.degrees(math.atan2(nose_drop, inter_eye + 1e-6))
     return yaw, pitch
 
-# Émotions ultra-simplifiées (heuristique brute pour démarrer)
 def rough_emotion(landmarks, left_ear, right_ear):
     ear = (left_ear + right_ear) / 2.0
-    # fatigue si yeux plutôt fermés
     if ear < 0.19:
         return "fatigue"
 
-    # colère: bouche fine + sourcils (idx 105 & 334 ≈ sourcils internes) bas par rapport aux yeux
-    # NB: indices approximatifs pour un bootstrap, à affiner plus tard
     brow_left = landmarks[105]
     brow_right = landmarks[334]
     eye_left_center = ((landmarks[33][0]+landmarks[133][0])/2, (landmarks[33][1]+landmarks[133][1])/2)
@@ -60,14 +49,12 @@ def rough_emotion(landmarks, left_ear, right_ear):
     if brow_to_eye < 6 and mouth_ratio < 0.10:
         return "colère"
 
-    # stress (très grossier): bouche un peu ouverte + tête légèrement baissée
     _, pitch = head_yaw_pitch(landmarks)
     if mouth_ratio > 0.15 and pitch > 3:
         return "stress"
 
     return "neutre"
 
-# ------------------ Détections ------------------
 def detect_from_image(image_bgr):
     mp_face = mp.solutions.face_mesh
     with mp_face.FaceMesh(static_image_mode=True, max_num_faces=1, refine_landmarks=True) as face_mesh:
@@ -87,14 +74,11 @@ def detect_from_image(image_bgr):
         if not res.multi_face_landmarks:
             return out
 
-        # Récupère le 1er visage
         h, w = image_bgr.shape[:2]
         lms = res.multi_face_landmarks[0].landmark
         pts = [(lm.x * w, lm.y * h) for lm in lms]
         out["face_found"] = True
 
-        # Indices MediaPipe pour les yeux (approx)
-        # Gauche: 33-160-158-133-153-144 ; Droite: 362-385-387-263-373-380
         left_idx  = [33, 160, 158, 133, 153, 144]
         right_idx = [362, 385, 387, 263, 373, 380]
 
@@ -103,20 +87,16 @@ def detect_from_image(image_bgr):
         ear = (left_ear + right_ear) / 2.0
         out["scores"]["EAR"] = round(ear, 3)
 
-        # Somnolence si EAR < seuil (image fixe => instantané)
         SLEEP_EAR_THR = 0.19
         out["somnolence"] = ear < SLEEP_EAR_THR
 
-        # Distraction (regard hors route) via yaw/pitch approchés
         yaw, pitch = head_yaw_pitch(pts)
         out["scores"]["yaw_deg"] = round(yaw, 1)
         out["scores"]["pitch_deg"] = round(pitch, 1)
 
-        # Seuils simples: |yaw|>15° ou pitch>10° => hors route
         out["regard_hors_route"] = (abs(yaw) > 15) or (pitch > 10)
-        out["distraction"] = out["regard_hors_route"]  # pour l’instant, équivalent
+        out["distraction"] = out["regard_hors_route"]
 
-        # Emotion très simplifiée
         out["emotion"] = rough_emotion(pts, left_ear, right_ear)
         return out
 

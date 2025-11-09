@@ -10,8 +10,6 @@ import datetime
 
 app = FastAPI()
 
-# ---- CORS (autorise ton front en dev) ----
-# Adapte selon ton port front (CRA: 3000, Vite: 5173, Next: 3000)
 origins = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
@@ -29,8 +27,6 @@ app.add_middleware(
 UPLOAD_DIR = Path("recordings")
 UPLOAD_DIR.mkdir(exist_ok=True)
 
-# ---- Servir les fichiers statiques (vidéos) ----
-# Accessible via http://localhost:8000/files/<nom-fichier>
 app.mount("/files", StaticFiles(directory=str(UPLOAD_DIR)), name="files")
 
 
@@ -40,13 +36,12 @@ def file_info(p: Path):
         "name": p.name,
         "size": stat.st_size,
         "createdAt": datetime.datetime.fromtimestamp(stat.st_ctime).isoformat(),
-        "url": f"/files/{p.name}",  # URL relative servie par StaticFiles
+        "url": f"/files/{p.name}",
     }
 
 
 @app.get("/api/recordings")
 def list_recordings():
-    # On renvoie d'abord les mp4, puis les webm, triés par date desc
     files = sorted(
         [p for p in UPLOAD_DIR.iterdir() if p.is_file() and p.suffix.lower() in {".mp4", ".webm"}],
         key=lambda p: p.stat().st_ctime,
@@ -57,11 +52,10 @@ def list_recordings():
 
 @app.post("/api/upload")
 async def upload(file: UploadFile = File(...)):
-    raw_path = UPLOAD_DIR / file.filename  # ex: clip_... .webm
+    raw_path = UPLOAD_DIR / file.filename
     with raw_path.open("wb") as f:
         f.write(await file.read())
 
-    # Convertir en MP4 (H.264) avec ffmpeg (installé sur le système)
     mp4_path = raw_path.with_suffix(".mp4")
     cmd = [
         "ffmpeg", "-y", "-i", str(raw_path),
@@ -71,7 +65,6 @@ async def upload(file: UploadFile = File(...)):
     ]
     try:
         subprocess.run(cmd, check=True, capture_output=True)
-        # (Optionnel) supprimer la source webm après conversion
         try:
             raw_path.unlink(missing_ok=True)
         except Exception:
