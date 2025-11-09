@@ -1,0 +1,23 @@
+# Core ML/CV
+torch==2.5.1
+torchvision==0.20.1
+ultralytics==8.2.50
+opencv-python
+numpy
+scipy
+
+# Tracking
+deep-sort-realtime
+byte-tracker
+
+# Server
+flask
+flask-cors
+pydrive
+
+# Audio
+simpleaudio
+
+# Deep Learning (pour TFLite plus tard)
+tensorflow-cpu
+timm
